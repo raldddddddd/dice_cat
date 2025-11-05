@@ -1,0 +1,113 @@
+import 'dart:math';
+import 'package:flame/camera.dart';
+import 'package:flame/components.dart';
+import 'package:flame/game.dart';
+import 'package:flutter/material.dart' hide Image;
+
+import 'cat_scene.dart';
+import 'dice_overlay.dart';
+import 'dice_selector.dart';
+import 'dice_type.dart';
+
+class DiceRollerGame extends FlameGame {
+  late final CatComponent cat;
+  late final DiceSelector diceSelector;
+  
+  late final Sprite catIdle;
+  late final SpriteAnimation catBlink;
+  late final SpriteAnimation catRoll;
+  late final Map<DiceType, Sprite> diceSprites;
+  late final Map<int, Sprite> numberSprites;
+
+  DiceType selectedDice = DiceType.d6;
+
+  @override
+  Future<void> onLoad() async {
+    // Fixed: Use resolution as named parameter
+    camera.viewport = FixedResolutionViewport(resolution: Vector2(360, 640));
+
+    // Load cat sprites
+    catIdle = await Sprite.load('cat.png');
+    
+    // Load cat blink animation 
+    final catBlinkImages = await images.loadAll([
+      'cat_blink_0.png',
+      'cat_blink_1.png',
+      'cat_blink_2.png',
+      'cat_blink_3.png',
+      'cat_blink_4.png',
+      'cat_blink_5.png',
+      'cat_blink_6.png',
+    ]);
+    catBlink = SpriteAnimation.spriteList(
+      catBlinkImages.map((img) => Sprite(img)).toList(),
+      stepTime: 0.1,
+      loop: false,
+    );
+
+    // Load cat roll animation (assuming 6 frames)
+    final catRollImages = await images.loadAll([
+      'cat_roll_0.png',
+      'cat_roll_1.png',
+      'cat_roll_2.png',
+      'cat_roll_3.png',
+      'cat_roll_4.png',
+      'cat_roll_5.png',
+    ]);
+    catRoll = SpriteAnimation.spriteList(
+      catRollImages.map((img) => Sprite(img)).toList(),
+      stepTime: 0.12,
+      loop: false,
+    );
+
+    // Load dice sprites
+    diceSprites = {
+      DiceType.d4: await Sprite.load('d4.png'),
+      DiceType.d6: await Sprite.load('d6.png'),
+      DiceType.d8: await Sprite.load('d8.png'),
+      DiceType.d10: await Sprite.load('d10.png'),
+      DiceType.d12: await Sprite.load('d12.png'),
+      DiceType.d20: await Sprite.load('d20.png'),
+    };
+
+    // Load number sprites (1-20)
+    numberSprites = {};
+    for (int i = 1; i <= 20; i++) {
+      numberSprites[i] = await Sprite.load('$i.png');
+    }
+
+    // Add cat component
+    cat = CatComponent();
+    add(cat);
+
+    // Add dice selector button
+    diceSelector = DiceSelector();
+    add(diceSelector);
+  }
+
+  void showDiceSelectOverlay(void Function(DiceType) onDiceSelected) {
+    final overlay = DiceSelectOverlay(
+      onDiceSelected: (dice) {
+        selectedDice = dice;
+        onDiceSelected(dice);
+      },
+    );
+    add(overlay);
+  }
+
+  void showRollOverlay(int result) {
+    debugPrint('📊 Creating DiceRollOverlay with result: $result');
+    final overlay = DiceRollOverlay(dice: selectedDice, result: result);
+    add(overlay);
+    debugPrint('✅ DiceRollOverlay added to game!');
+  }
+
+  void onCatRollComplete() {
+    debugPrint('🎲 onCatRollComplete called!');
+    final result = Random().nextInt(selectedDice.maxValue) + 1;
+    debugPrint('🎲 Roll result: $result (dice: ${selectedDice.name})');
+    showRollOverlay(result);
+  }
+
+  int maxRoll(DiceType type) => type.maxValue;
+}
