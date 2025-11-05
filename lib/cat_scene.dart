@@ -1,7 +1,6 @@
 import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
-import 'package:flutter/foundation.dart';
 import 'game.dart';
 
 class CatComponent extends PositionComponent
@@ -15,35 +14,48 @@ class CatComponent extends PositionComponent
   Future<void> onLoad() async {
     await super.onLoad();
 
-    size = game.size;
+    final viewportSize = game.camera.viewport.size;
+    size = viewportSize;
 
     // --- BACKGROUND ---
     bg = SpriteComponent(
       sprite: await Sprite.load('bg.png'),
-      size: size,
+      size: viewportSize,
       position: Vector2.zero(),
       anchor: Anchor.topLeft,
-      priority: -1, // ensures background is always behind cat
+      priority: -1,
     );
     add(bg);
 
-    // --- CAT SETUP ---
+    // --- CAT SPRITE SETUP ---
     final original = game.catIdle.srcSize;
-    final targetWidth = size.x * 0.80;
-    final scale = targetWidth / original.x;
-    final targetSize = Vector2(original.x * scale, original.y * scale);
 
+    // Scale to fit height or width (whichever is smaller)
+    final scaleFactor = min(
+      viewportSize.x * 0.8 / original.x, // 80% width fit
+      viewportSize.y * 0.9 / original.y, // 90% height fit
+    );
+
+    final targetSize = Vector2(original.x * scaleFactor, original.y * scaleFactor);
+
+    // Idle animation (default)
     final idleAnimation = SpriteAnimation.spriteList(
       [game.catIdle],
       stepTime: 1.0,
       loop: true,
     );
 
+    // Position centered horizontally with the bottom edge at the screen bottom
     catSprite = SpriteAnimationComponent(
       animation: idleAnimation,
       size: targetSize,
-      anchor: Anchor.bottomCenter,
-      position: Vector2(size.x / 2, size.y),
+      // **FIX 1: Anchor the sprite from its bottom-center point**
+      anchor: Anchor.bottomCenter, 
+      position: Vector2(
+        viewportSize.x / 2, // Center horizontally
+        // **FIX 2: Place the bottom-center point (the anchor) at the screen's bottom edge**
+        viewportSize.y
+      ), 
     );
     add(catSprite);
 
@@ -59,7 +71,6 @@ class CatComponent extends PositionComponent
       blinkScheduled = false;
 
       if (!isRolling) {
-        // Play blink animation
         catSprite.animation = game.catBlink;
         catSprite.animationTicker?.reset();
       }
@@ -72,11 +83,10 @@ class CatComponent extends PositionComponent
   void update(double dt) {
     super.update(dt);
 
-    // After blink, go back to idle
+    // After blink → back to idle
     if (!isRolling &&
         catSprite.animation == game.catBlink &&
         catSprite.animationTicker?.done() == true) {
-      debugPrint('😊 Blink complete, returning to idle');
       catSprite.animation = SpriteAnimation.spriteList(
         [game.catIdle],
         stepTime: 1.0,
@@ -85,11 +95,10 @@ class CatComponent extends PositionComponent
       catSprite.animationTicker?.reset();
     }
 
-    // After roll animation, show result overlay
+    // After roll → go idle + show result
     if (isRolling && catSprite.animation == game.catRoll) {
       final ticker = catSprite.animationTicker;
       if (ticker?.done() == true) {
-        debugPrint('✅ Roll animation COMPLETE! Showing overlay...');
         isRolling = false;
         catSprite.animation = SpriteAnimation.spriteList(
           [game.catIdle],
@@ -107,13 +116,8 @@ class CatComponent extends PositionComponent
 
   @override
   void onTapDown(TapDownEvent event) {
-    debugPrint('🐱 CAT TAPPED!');
-    if (isRolling) {
-      debugPrint('⚠️ Already rolling, ignoring tap');
-      return;
-    }
+    if (isRolling) return;
 
-    debugPrint('🎲 Starting roll animation...');
     isRolling = true;
     catSprite.animation = game.catRoll;
     catSprite.animationTicker?.reset();

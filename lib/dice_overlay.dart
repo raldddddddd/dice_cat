@@ -5,7 +5,6 @@ import 'package:flutter/material.dart' hide Image, PointerMoveEvent;
 import 'game.dart';
 import 'dice_type.dart';
 
-/// Button for a dice (sprite + number)
 class DiceButton extends PositionComponent {
   final DiceType diceType;
   late final SpriteComponent diceSprite;
@@ -38,7 +37,6 @@ class DiceButton extends PositionComponent {
   }
 }
 
-/// Overlay for selecting dice
 class DiceSelectOverlay extends PositionComponent
     with
         HasGameReference<DiceRollerGame>,
@@ -55,27 +53,25 @@ class DiceSelectOverlay extends PositionComponent
 
   @override
   Future<void> onLoad() async {
-    size = game.size;
+    final viewportSize = game.camera.viewport.size;
+    size = viewportSize;
     anchor = Anchor.topLeft;
     priority = 100;
 
-    // Dark semi-transparent background (66%)
     backgroundRect = RectangleComponent(
       size: size,
       paint: Paint()..color = const Color(0xAA000000),
     );
     add(backgroundRect);
 
-    // White rectangle behind dice (starts fully transparent)
     final boxHeight = 280.0;
     whiteRect = RectangleComponent(
-      size: Vector2(size.x, boxHeight),
-      position: Vector2(0, size.y / 2 - boxHeight / 2),
-      paint: Paint()..color = const Color(0x00E4A672), // fully transparent start
+      size: Vector2(viewportSize.x, boxHeight),
+      position: Vector2(0, viewportSize.y / 2 - boxHeight / 2),
+      paint: Paint()..color = const Color(0x00E4A672),
     );
     add(whiteRect);
 
-    // Fade-in effect to 10% opacity of #E4A672
     whiteRect.add(
       OpacityEffect.to(
         0.4,
@@ -83,7 +79,6 @@ class DiceSelectOverlay extends PositionComponent
       ),
     );
 
-    // Dice buttons: 2 rows × 3 columns
     const columns = 3;
     const rows = 2;
     const spacingX = 120.0;
@@ -91,8 +86,8 @@ class DiceSelectOverlay extends PositionComponent
 
     final totalWidth = (columns - 1) * spacingX;
     final totalHeight = (rows - 1) * spacingY;
-    final startX = size.x / 2 - totalWidth / 2;
-    final startY = size.y / 2 - totalHeight / 2;
+    final startX = viewportSize.x / 2 - totalWidth / 2;
+    final startY = viewportSize.y / 2 - totalHeight / 2;
 
     for (int i = 0; i < DiceType.values.length; i++) {
       final dice = DiceType.values[i];
@@ -115,24 +110,21 @@ class DiceSelectOverlay extends PositionComponent
       add(button);
     }
 
-    // Paw cursor
     final pawSprite = await Sprite.load('paw.png');
     pawCursor = SpriteComponent(
       sprite: pawSprite,
       size: Vector2(180, 360),
       anchor: Anchor(0.5, 0.25),
-      position: Vector2(size.x / 2, size.y / 2 + boxHeight / 2 - 20),
+      position: Vector2(viewportSize.x / 2, viewportSize.y / 2 + boxHeight / 2 - 20),
     );
     add(pawCursor);
   }
 
-  // For mouse movement (desktop)
   @override
   void onPointerMove(PointerMoveEvent event) {
     pawCursor.position = event.localPosition;
   }
 
-  // For mobile dragging (touch)
   @override
   void onDragUpdate(DragUpdateEvent event) {
     pawCursor.position = event.localStartPosition + event.localDelta;
@@ -143,7 +135,6 @@ class DiceSelectOverlay extends PositionComponent
     final local = event.localPosition;
     for (final button in diceComponents) {
       if (button.containsPoint(local)) {
-        // Fade-out effect
         whiteRect.add(
           OpacityEffect.to(
             0.0,
@@ -158,11 +149,10 @@ class DiceSelectOverlay extends PositionComponent
   }
 }
 
-/// Overlay when rolling dice
 class DiceRollOverlay extends PositionComponent
     with HasGameReference<DiceRollerGame>, TapCallbacks {
   final DiceType dice;
-  final int result; // use number PNG
+  final int result;
   late RectangleComponent backgroundRect;
   late RectangleComponent whiteRect;
 
@@ -170,26 +160,25 @@ class DiceRollOverlay extends PositionComponent
 
   @override
   Future<void> onLoad() async {
-    size = game.size;
+    debugPrint('🎯 DiceRollOverlay loading...');
+    final viewportSize = game.camera.viewport.size;
+    size = viewportSize;
     priority = 100;
 
-    // Dark semi-transparent background (66%)
     backgroundRect = RectangleComponent(
       size: size,
       paint: Paint()..color = const Color(0xAA000000),
     );
     add(backgroundRect);
 
-    // White rectangle behind dice (starts fully transparent)
     final boxHeight = 280.0;
     whiteRect = RectangleComponent(
-      size: Vector2(size.x, boxHeight),
-      position: Vector2(0, size.y / 2 - boxHeight / 2),
-      paint: Paint()..color = const Color(0x00E4A672), // fully transparent start
+      size: Vector2(viewportSize.x, boxHeight),
+      position: Vector2(0, viewportSize.y / 2 - boxHeight / 2),
+      paint: Paint()..color = const Color(0x00E4A672),
     );
     add(whiteRect);
 
-    // Fade-in effect to 10% opacity of #E4A672
     whiteRect.add(
       OpacityEffect.to(
         0.4,
@@ -197,16 +186,14 @@ class DiceRollOverlay extends PositionComponent
       ),
     );
 
-    // Dice sprite
     final diceSprite = SpriteComponent(
       sprite: game.diceSprites[dice]!,
       size: Vector2(160, 160),
       anchor: Anchor.center,
-      position: Vector2(size.x / 2, size.y / 2),
+      position: Vector2(viewportSize.x / 2, viewportSize.y / 2),
     );
     add(diceSprite);
 
-    // Number overlay on top
     final numberSprite = game.numberSprites[result]!;
     final numberIcon = SpriteComponent(
       sprite: numberSprite,
@@ -215,11 +202,13 @@ class DiceRollOverlay extends PositionComponent
       position: diceSprite.position,
     );
     add(numberIcon);
+    
+    debugPrint('✅ DiceRollOverlay loaded!');
   }
 
   @override
   void onTapDown(TapDownEvent event) {
-    // Fade-out effect
+    debugPrint('👆 Overlay tapped');
     whiteRect.add(
       OpacityEffect.to(
         0.0,

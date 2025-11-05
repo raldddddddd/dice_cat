@@ -12,7 +12,7 @@ import 'dice_type.dart';
 class DiceRollerGame extends FlameGame {
   late final CatComponent cat;
   late final DiceSelector diceSelector;
-  
+
   late final Sprite catIdle;
   late final SpriteAnimation catBlink;
   late final SpriteAnimation catRoll;
@@ -22,14 +22,16 @@ class DiceRollerGame extends FlameGame {
   DiceType selectedDice = DiceType.d6;
 
   @override
+  Color backgroundColor() => const Color(0xFFE4A672);
+
+  @override
   Future<void> onLoad() async {
-    // Fixed: Use resolution as named parameter
+    await super.onLoad();
+
     camera.viewport = FixedResolutionViewport(resolution: Vector2(360, 640));
 
-    // Load cat sprites
     catIdle = await Sprite.load('cat.png');
-    
-    // Load cat blink animation 
+
     final catBlinkImages = await images.loadAll([
       'cat_blink_0.png',
       'cat_blink_1.png',
@@ -45,7 +47,6 @@ class DiceRollerGame extends FlameGame {
       loop: false,
     );
 
-    // Load cat roll animation (assuming 6 frames)
     final catRollImages = await images.loadAll([
       'cat_roll_0.png',
       'cat_roll_1.png',
@@ -60,7 +61,6 @@ class DiceRollerGame extends FlameGame {
       loop: false,
     );
 
-    // Load dice sprites
     diceSprites = {
       DiceType.d4: await Sprite.load('d4.png'),
       DiceType.d6: await Sprite.load('d6.png'),
@@ -70,17 +70,14 @@ class DiceRollerGame extends FlameGame {
       DiceType.d20: await Sprite.load('d20.png'),
     };
 
-    // Load number sprites (1-20)
     numberSprites = {};
     for (int i = 1; i <= 20; i++) {
       numberSprites[i] = await Sprite.load('$i.png');
     }
 
-    // Add cat component
     cat = CatComponent();
     add(cat);
 
-    // Add dice selector button
     diceSelector = DiceSelector();
     add(diceSelector);
   }
@@ -96,16 +93,14 @@ class DiceRollerGame extends FlameGame {
   }
 
   void showRollOverlay(int result) {
-    debugPrint('📊 Creating DiceRollOverlay with result: $result');
+    debugPrint('📊 Showing roll overlay: $result');
     final overlay = DiceRollOverlay(dice: selectedDice, result: result);
     add(overlay);
-    debugPrint('✅ DiceRollOverlay added to game!');
   }
 
   void onCatRollComplete() {
-    debugPrint('🎲 onCatRollComplete called!');
+    debugPrint('🎲 Cat roll complete!');
     final result = Random().nextInt(selectedDice.maxValue) + 1;
-    debugPrint('🎲 Roll result: $result (dice: ${selectedDice.name})');
     showRollOverlay(result);
   }
 

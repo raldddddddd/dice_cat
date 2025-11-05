@@ -1,20 +1,13 @@
-import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import 'package:flame/game.dart';
 import 'game.dart';
 
 void main() {
-  final game = DiceRollerGame();
-
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(
-    MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        body: GameWidget(
-          game: game,
-          loadingBuilder: (_) =>
-              const Center(child: CircularProgressIndicator()),
-        ),
-      ),
+    GameWidget(
+      game: DiceRollerGame(),
+      backgroundBuilder: (context) => const ColoredBox(color: Colors.black),
     ),
   );
 }

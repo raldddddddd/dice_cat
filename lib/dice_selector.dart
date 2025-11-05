@@ -11,10 +11,10 @@ class DiceSelector extends PositionComponent
 
   @override
   Future<void> onLoad() async {
+    final viewportSize = game.camera.viewport.size;
     size = Vector2(80, 80);
-    position = Vector2(game.size.x - size.x - 12, game.size.y - size.y - 12);
+    position = Vector2(viewportSize.x - size.x - 12, viewportSize.y - size.y - 12);
 
-    // Dice icon (centered)
     diceIcon = SpriteComponent(
       sprite: game.diceSprites[selected],
       size: Vector2(120, 120),
@@ -23,7 +23,6 @@ class DiceSelector extends PositionComponent
     );
     add(diceIcon);
 
-    // Number overlay centered on top of diceIcon
     final num = game.maxRoll(selected);
     numberIcon = SpriteComponent(
       sprite: game.numberSprites[num],
@@ -36,7 +35,6 @@ class DiceSelector extends PositionComponent
 
   @override
   void onTapDown(TapDownEvent event) {
-    // Open dice selection overlay; when selected, update icon
     game.showDiceSelectOverlay((DiceType type) {
       selected = type;
       game.selectedDice = type;
